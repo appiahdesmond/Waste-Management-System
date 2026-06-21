@@ -374,7 +374,7 @@ function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: P
       <div>
         <h1 className="text-2xl font-bold text-foreground font-display">Dashboard</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {getGreeting()}, {getRoleLabel(role)} — here is what is happening today.
+          {getGreeting()}, {getRoleLabel(role)} 👋 — here is what's happening today.
         </p>
       </div>
 
