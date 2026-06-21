@@ -339,12 +339,43 @@ function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: P
   const isAM = role === "account_manager";
   const isDriver = role === "driver";
   const isClient = role === "client";
+  
+  // Greeting based on time
+  
+   const getGreeting = () => {
+    const hour = new Date().getHours();
 
+    if (hour < 12) return "Good Morning";
+    if (hour < 18) return "Good Afternoon";
+    return "Good Evening";
+     };
+  
+  // Role label mapping
+  
+  const getRoleLabel = (role: Role) => {
+    switch (role) {
+      case "managing_director":
+        return "Director";
+      case "operation_manager":
+        return "Operations Manager";
+      case "account_manager":
+        return "Account Manager";
+      case "driver":
+        return "Driver";
+      case "client":
+        return "Client";
+      default:
+        return "User";
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground font-display">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">Welcome back — here is what is happening today.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {getGreeting()}, {getRoleLabel(role)} — here is what is happening today.
+        </p>
       </div>
 
       {/* Quick actions based on role */}
