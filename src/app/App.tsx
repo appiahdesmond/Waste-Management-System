@@ -1428,8 +1428,7 @@ export default function App() {
             <Truck size={18} className="text-white" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white" style={{ fontFamily: "Outfit, sans-serif" }}>WasteGH</p>
-            <p className="text-xs text-white/40 font-mono">v2.1</p>
+            <p className="text-sm font-bold text-white" style={{ fontFamily: "Outfit, sans-serif" }}>PMJD Ltd</p>
           </div>
         </div>
 
