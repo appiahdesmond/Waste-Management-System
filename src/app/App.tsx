@@ -1394,7 +1394,7 @@ export default function App() {
             <LoginBox />
           </div>
 
-          <p className="text-center text-xs text-muted-foreground mt-6 font-mono"> © 2026 PMJD Ltd.</p>
+          <p className="text-center text-xs text-muted-foreground mt-6 font-mono"> Contact us on +233XXXXXXXX © 2026 PMJD Ltd.</p>
         </div>
       </div>
     );
