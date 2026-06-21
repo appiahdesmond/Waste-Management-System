@@ -1453,7 +1453,15 @@ export default function App() {
             <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
               {navItems.find((n) => n.id === activePage)?.label ?? "Dashboard"}
             </p>
-            <p className="text-xs text-muted-foreground font-mono">Monday, 16 June 2026</p>
+            <p className="text-xs text-muted-foreground font-mono">
+                {new Date().toLocaleDateString("en-GB", {
+                weekday: "long",
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+                  })}
+            </p>
+            // <p className="text-xs text-muted-foreground font-mono">Monday, 16 June 2026</p>
           </div>
           <div className="flex items-center gap-3">
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
