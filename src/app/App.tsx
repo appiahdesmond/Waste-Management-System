@@ -1461,7 +1461,6 @@ export default function App() {
                 year: "numeric",
                   })}
             </p>
-            // <p className="text-xs text-muted-foreground font-mono">Monday, 16 June 2026</p>
           </div>
           <div className="flex items-center gap-3">
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
