@@ -353,9 +353,9 @@ function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: P
             <p className="text-sm text-muted-foreground">
              Welcome back — here is what's happening today.
             </p>
+         </div>
        </div>
-        
-      </div>
+     </div>
 
       {/* Quick actions based on role */}
       <div className="flex items-center gap-3">
