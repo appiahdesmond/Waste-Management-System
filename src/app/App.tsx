@@ -453,7 +453,7 @@ function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: P
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 bg-card rounded-xl p-5 border border-border shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-foreground font-display">Collections Trend</h3>
+              <h3 className="font-semibold text-foreground font-display">Collection Trend</h3>
               <span className="text-xs font-mono text-muted-foreground">Jan – Jun 2026</span>
             </div>
             <ResponsiveContainer width="100%" height={220}>
