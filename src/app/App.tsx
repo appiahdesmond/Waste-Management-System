@@ -1479,12 +1479,6 @@ export default function App() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
         <header className="h-14 flex-shrink-0 bg-card border-b border-border flex items-center justify-between px-6 shadow-sm">
-          <div>
-            <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-              {navItems.find((n) => n.id === activePage)?.label ?? "Dashboard"}
-            </p>
-            <p className="text-xs text-muted-foreground font-mono">Monday, 16 June 2026</p>
-          </div>
           <div className="flex items-center gap-3">
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
               <Bell size={18} className="text-muted-foreground" />
