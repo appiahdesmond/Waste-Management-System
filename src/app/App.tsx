@@ -1355,7 +1355,7 @@ export default function App() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
               <Truck size={28} className="text-primary-foreground" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>WasteGH</h1>
+            <h1 className="text-3xl font-bold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>PMJD</h1>
             <p className="text-sm text-muted-foreground mt-1">Waste Management System</p>
           </div>
 
@@ -1365,7 +1365,7 @@ export default function App() {
             <LoginBox />
           </div>
 
-          <p className="text-center text-xs text-muted-foreground mt-6 font-mono">WasteGH v2.1 · © 2026 WasteGH Ltd.</p>
+          <p className="text-center text-xs text-muted-foreground mt-6 font-mono">Contact us on 233XXXXXXXX · © 2026 PMJD Ltd.</p>
         </div>
       </div>
     );
@@ -1402,7 +1402,7 @@ export default function App() {
                   <Truck size={18} className="text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white" style={{ fontFamily: "Outfit, sans-serif" }}>WasteGH</p>
+                  <p className="text-sm font-bold text-white" style={{ fontFamily: "Outfit, sans-serif" }}>PMJD</p>
                   <p className="text-xs text-white/40 font-mono">v2.1</p>
                 </div>
               </div>
@@ -1524,7 +1524,6 @@ export default function App() {
               <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
                 {navItems.find((n) => n.id === activePage)?.label ?? "Dashboard"}
               </p>
-              <p className="text-xs text-muted-foreground font-mono">Monday, 16 June 2026</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
