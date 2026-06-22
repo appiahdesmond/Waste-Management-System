@@ -341,21 +341,12 @@ function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: P
   const isDriver = role === "driver";
   const isClient = role === "client";
 
-  return (
+ return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground font-display">Dashboard</h1>
-        <div className="mt-1">
-            <h2 className="text-sm font-medium text-foreground">
-                Good {getTimeOfDay()} {user?.name}
-            </h2>
-
-            <p className="text-sm text-muted-foreground">
-             Welcome back — here is what's happening today.
-            </p>
-         </div>
-       </div>
-     </div>
+        <p className="text-sm text-muted-foreground mt-1">Welcome back — here is what is happening today.</p>
+      </div>
 
       {/* Quick actions based on role */}
       <div className="flex items-center gap-3">
