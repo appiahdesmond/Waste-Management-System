@@ -9,6 +9,7 @@ import {
   Truck,
   LogOut,
   Bell,
+  Menu,
   ChevronDown,
   Edit2,
   RefreshCw,
@@ -339,43 +340,12 @@ function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: P
   const isAM = role === "account_manager";
   const isDriver = role === "driver";
   const isClient = role === "client";
-  
-  // Greeting based on time
-  
-   const getGreeting = () => {
-    const hour = new Date().getHours();
 
-    if (hour < 12) return "Good Morning";
-    if (hour < 18) return "Good Afternoon";
-    return "Good Evening";
-     };
-  
-  // Role label mapping
-  
-  const getRoleLabel = (role: Role) => {
-    switch (role) {
-      case "managing_director":
-        return "Director";
-      case "operation_manager":
-        return "Operations Manager";
-      case "account_manager":
-        return "Account Manager";
-      case "driver":
-        return "Driver";
-      case "client":
-        return "Client";
-      default:
-        return "User";
-    }
-  };
-  
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground font-display">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {getGreeting()}, {getRoleLabel(role)} 👋 — here is what's happening today.
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">Welcome back — here is what is happening today.</p>
       </div>
 
       {/* Quick actions based on role */}
@@ -413,7 +383,7 @@ function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: P
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {(isMD || isOM) && (
           <>
             <StatCard title="Total Collections" value="1,842" sub="This month" trend="up" icon={<Package size={18} />} color="#15803d" />
@@ -450,10 +420,10 @@ function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: P
 
       {/* Charts row */}
       {(isMD || isOM || isAM) && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 bg-card rounded-xl p-5 border border-border shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-foreground font-display">Collections Trend</h3>
+              <h3 className="font-semibold text-foreground font-display">Collections & Revenue</h3>
               <span className="text-xs font-mono text-muted-foreground">Jan – Jun 2026</span>
             </div>
             <ResponsiveContainer width="100%" height={220}>
@@ -601,7 +571,7 @@ function SchedulingPage() {
             {editId !== null ? "Edit Schedule Entry" : "New Schedule Assignment"}
           </h3>
         </div>
-        <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div className="p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Client */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Client</label>
@@ -789,7 +759,7 @@ function SchedulingPreviewPage() {
         <h1 className="text-2xl font-bold text-foreground font-display">My Schedule</h1>
         <p className="text-sm text-muted-foreground mt-1">Your assigned pickup schedule for this week.</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
         {mySchedule.map((entry) => (
           <div key={entry.id} className="bg-card rounded-xl border border-border p-5 shadow-sm">
             <div className="flex items-start justify-between mb-3">
@@ -875,7 +845,7 @@ function ReportsPage({ role }: { role: Role }) {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
         <div className="bg-card rounded-xl border border-border shadow-sm p-5">
           <h3 className="font-semibold text-foreground font-display mb-4">Monthly Collections</h3>
           <ResponsiveContainer width="100%" height={220}>
@@ -1368,6 +1338,7 @@ export default function App() {
   const [activePage, setActivePage] = useState<Page>("dashboard");
   const [showRolePicker, setShowRolePicker] = useState(false);
   const [notifications] = useState(3);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const auth = useAuth();
 
@@ -1384,149 +1355,8 @@ export default function App() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
               <Truck size={28} className="text-primary-foreground" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>PMJD</h1>
+            <h1 className="text-3xl font-bold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>WasteGH</h1>
             <p className="text-sm text-muted-foreground mt-1">Waste Management System</p>
           </div>
 
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-1" style={{ fontFamily: "Outfit, sans-serif" }}>Sign in to your account</h2>
-            <p className="text-sm text-muted-foreground mb-5">Enter your username and password.</p>
-            <LoginBox />
-          </div>
-
-          <p className="text-center text-xs text-muted-foreground mt-6 font-mono">Contact us on 233XXXXXXXX · © 2026 PMJD Ltd.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const navItems = activeRole ? NAV_CONFIG[activeRole] : [];
-  const currentRole = ROLES.find((r) => r.id === activeRole!) ?? ROLES[0];
-
-  const renderPage = () => {
-    switch (activePage) {
-  case "dashboard": return <DashboardPage role={activeRole!} onNavigate={(p) => setActivePage(p)} />;
-      case "scheduling": return <SchedulingPage />;
-      case "scheduling_preview": return <SchedulingPreviewPage />;
-      case "reports": return <ReportsPage role={activeRole!} />;
-      case "user_management": return <UserManagementPage />;
-      case "payment_activities": return <PaymentActivitiesPage />;
-      case "make_payment": return <MakePaymentPage />;
-      case "payment_review": return <PaymentReviewPage />;
-      case "settings": return <SettingsPage role={activeRole!} />;
-      default: return <DashboardPage role={activeRole!} />;
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex bg-background" style={{ fontFamily: "Inter, sans-serif" }}>
-      {/* Sidebar */}
-      <aside className="w-60 flex-shrink-0 flex flex-col" style={{ backgroundColor: "#0d2137" }}>
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-            <Truck size={18} className="text-white" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-white" style={{ fontFamily: "Outfit, sans-serif" }}>PMJD</p>
-          </div>
-        </div>
-
-        {/* Role Badge */}
-        <div className="px-5 py-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: currentRole.color }}>
-              {currentRole.initials}
-            </div>
-            <span className="text-xs text-white/70 truncate">{currentRole.label}</span>
-          </div>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-2 space-y-0.5">
-          {navItems.map((item) => {
-            const isActive = activePage === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActivePage(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left ${
-                  isActive
-                    ? "bg-primary text-white font-medium"
-                    : "text-white/60 hover:text-white hover:bg-white/8"
-                }`}
-              >
-                <span className={isActive ? "text-white" : "text-white/50"}>{item.icon}</span>
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Sign out */}
-        <div className="p-3 border-t border-white/10">
-          <button
-            onClick={() => { auth.signOut(); setActivePage("dashboard"); }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/8 transition-all"
-          >
-            <LogOut size={16} />
-            Sign Out
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Topbar */}
-        <header className="h-14 flex-shrink-0 bg-card border-b border-border flex items-center justify-between px-6 shadow-sm">
-          <div>
-            <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-              {navItems.find((n) => n.id === activePage)?.label ?? "Dashboard"}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
-              <Bell size={18} className="text-muted-foreground" />
-              {notifications > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                  {notifications}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setShowRolePicker(!showRolePicker)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors relative"
-            >
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: currentRole.color }}>
-                {currentRole.initials}
-              </div>
-              <span className="text-sm font-medium text-foreground hidden sm:block">{currentRole.label}</span>
-              <ChevronDown size={14} className="text-muted-foreground" />
-              {showRolePicker && (
-                <div className="absolute top-full right-0 mt-2 w-52 bg-card border border-border rounded-xl shadow-xl z-50 py-1 overflow-hidden">
-                  {ROLES.map((r) => (
-                    <button
-                      key={r.id}
-                      onClick={() => { auth.switchRole?.(r.id); setActivePage("dashboard"); setShowRolePicker(false); }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${r.id === activeRole ? "text-primary font-medium" : "text-foreground"}`}
-                    >
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: r.color }}>
-                        {r.initials}
-                      </div>
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </button>
-          </div>
-        </header>
-
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {renderPage()}
-        </main>
-      </div>
-    </div>
-  );
-}
+          <div className="bg-card rounded-2xl border bo
