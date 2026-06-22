@@ -1492,6 +1492,14 @@ export default function App() {
                   })}
             </p>
           </div>
+          <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
+            <Bell size={18} className="text-muted-foreground" /> 
+            {notifications > 0 && ( 
+              <span className="absolute top-1.5 right-1.5 w-4 h-4 
+                rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center"> 
+                {notifications} </span> 
+              )} 
+          </button>
             <button
               onClick={() => setShowRolePicker(!showRolePicker)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors relative"
