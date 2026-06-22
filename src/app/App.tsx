@@ -345,7 +345,16 @@ function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: P
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground font-display">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">Welcome back — here is what is happening today.</p>
+        <div className="mt-1">
+            <h2 className="text-sm font-medium text-foreground">
+                Good {getTimeOfDay()} {user?.name}
+            </h2>
+
+            <p className="text-sm text-muted-foreground">
+             Welcome back — here is what's happening today.
+            </p>
+       </div>
+        
       </div>
 
       {/* Quick actions based on role */}
