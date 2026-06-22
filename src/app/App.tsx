@@ -1384,7 +1384,7 @@ export default function App() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
               <Truck size={28} className="text-primary-foreground" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>WasteGH</h1>
+            <h1 className="text-3xl font-bold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>PMJD</h1>
             <p className="text-sm text-muted-foreground mt-1">Waste Management System</p>
           </div>
 
@@ -1394,7 +1394,7 @@ export default function App() {
             <LoginBox />
           </div>
 
-          <p className="text-center text-xs text-muted-foreground mt-6 font-mono">WasteGH v2.1 · © 2026 WasteGH Ltd.</p>
+          <p className="text-center text-xs text-muted-foreground mt-6 font-mono">Contact us on 233XXXXXXXX · © 2026 PMJD Ltd.</p>
         </div>
       </div>
     );
