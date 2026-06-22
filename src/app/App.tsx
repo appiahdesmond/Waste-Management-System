@@ -1384,7 +1384,7 @@ export default function App() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
               <Truck size={28} className="text-primary-foreground" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>PMJD</h1>
+            <h1 className="text-3xl font-bold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>WasteGH</h1>
             <p className="text-sm text-muted-foreground mt-1">Waste Management System</p>
           </div>
 
@@ -1394,7 +1394,7 @@ export default function App() {
             <LoginBox />
           </div>
 
-          <p className="text-center text-xs text-muted-foreground mt-6 font-mono"> Contact us on +233XXXXXXXX © 2026 PMJD Ltd.</p>
+          <p className="text-center text-xs text-muted-foreground mt-6 font-mono">WasteGH v2.1 · © 2026 WasteGH Ltd.</p>
         </div>
       </div>
     );
@@ -1428,7 +1428,8 @@ export default function App() {
             <Truck size={18} className="text-white" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white" style={{ fontFamily: "Outfit, sans-serif" }}>PMJD Ltd</p>
+            <p className="text-sm font-bold text-white" style={{ fontFamily: "Outfit, sans-serif" }}>WasteGH</p>
+            <p className="text-xs text-white/40 font-mono">v2.1</p>
           </div>
         </div>
 
@@ -1474,7 +1475,60 @@ export default function App() {
           </button>
         </div>
       </aside>
+
+      {/* Main */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Topbar */}
+        <header className="h-14 flex-shrink-0 bg-card border-b border-border flex items-center justify-between px-6 shadow-sm">
+          <div>
+            <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+              {navItems.find((n) => n.id === activePage)?.label ?? "Dashboard"}
+            </p>
+            <p className="text-xs text-muted-foreground font-mono">Monday, 16 June 2026</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
+              <Bell size={18} className="text-muted-foreground" />
+              {notifications > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {notifications}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setShowRolePicker(!showRolePicker)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors relative"
+            >
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: currentRole.color }}>
+                {currentRole.initials}
+              </div>
+              <span className="text-sm font-medium text-foreground hidden sm:block">{currentRole.label}</span>
+              <ChevronDown size={14} className="text-muted-foreground" />
+              {showRolePicker && (
+                <div className="absolute top-full right-0 mt-2 w-52 bg-card border border-border rounded-xl shadow-xl z-50 py-1 overflow-hidden">
+                  {ROLES.map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => { auth.switchRole?.(r.id); setActivePage("dashboard"); setShowRolePicker(false); }}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${r.id === activeRole ? "text-primary font-medium" : "text-foreground"}`}
+                    >
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: r.color }}>
+                        {r.initials}
+                      </div>
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </button>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          {renderPage()}
+        </main>
+      </div>
     </div>
   );
 }
-
