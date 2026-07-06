@@ -283,6 +283,44 @@ const getGoogleMapsDirectionsUrl = (entry: Pick<ScheduleEntry, "locationAddress"
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
 };
 
+function MapsLink({
+  entry,
+  type,
+  label,
+}: {
+  entry: Pick<ScheduleEntry, "locationAddress" | "latitude" | "longitude">;
+  type: "search" | "directions";
+  label: string;
+}) {
+  const href = type === "search" ? getGoogleMapsSearchUrl(entry) : getGoogleMapsDirectionsUrl(entry);
+  const isUnavailable = !entry.locationAddress && !(entry.latitude && entry.longitude);
+
+  const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isUnavailable) {
+      event.preventDefault();
+      return;
+    }
+    event.preventDefault();
+    const opened = window.open(href, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      window.location.assign(href);
+    }
+  };
+
+  return (
+    <a
+      href={href}
+      onClick={handleClick}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`text-xs hover:underline ${isUnavailable ? "text-muted-foreground pointer-events-none no-underline" : "text-blue-600"}`}
+      aria-disabled={isUnavailable}
+    >
+      {label}
+    </a>
+  );
+}
+
 const TREND_DATA = [
   { month: "Jan", collections: 320, revenue: 28400 },
   { month: "Feb", collections: 288, revenue: 25100 },
@@ -840,9 +878,7 @@ function SchedulingPage({
                   <td className="px-5 py-3 text-muted-foreground">
                     <div className="flex flex-col gap-1">
                       <span>{entry.locationAddress}</span>
-                      <a href={getGoogleMapsSearchUrl(entry)} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
-                        Open in Google Maps
-                      </a>
+                      <MapsLink entry={entry} type="search" label="Open in Google Maps" />
                     </div>
                   </td>
                   <td className="px-5 py-3"><StatusBadge status={entry.status} /></td>
@@ -901,12 +937,8 @@ function SchedulingPreviewPage({ entries }: { entries: ScheduleEntry[] }) {
               <p className="text-xs text-muted-foreground font-mono">📍 {entry.zone}</p>
               <p className="text-xs text-muted-foreground">{entry.locationAddress}</p>
               <div className="flex items-center gap-3 pt-1">
-                <a href={getGoogleMapsSearchUrl(entry)} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
-                  View on Maps
-                </a>
-                <a href={getGoogleMapsDirectionsUrl(entry)} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
-                  Get Directions
-                </a>
+                <MapsLink entry={entry} type="search" label="View on Maps" />
+                <MapsLink entry={entry} type="directions" label="Get Directions" />
               </div>
             </div>
           </div>
