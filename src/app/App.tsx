@@ -77,7 +77,16 @@ interface ScheduleEntry {
   day: string;
   time: string;
   zone: string;
+  locationAddress: string;
+  latitude: string;
+  longitude: string;
   status: "scheduled" | "completed" | "pending" | "cancelled";
+}
+
+interface ClientLocation {
+  address: string;
+  latitude: string;
+  longitude: string;
 }
 
 interface User {
@@ -231,12 +240,12 @@ const NAV_CONFIG: Record<Role, NavItem[]> = {
 };
 
 const SCHEDULE_DATA: ScheduleEntry[] = [
-  { id: 1, client: "Akosua Mensah", driver: "Kweku Asante", date: "2026-06-18", day: "Thursday", time: "08:00 AM", zone: "Zone A", status: "scheduled" },
-  { id: 2, client: "Kofi Adu", driver: "Emmanuel Boateng", date: "2026-06-19", day: "Friday", time: "09:30 AM", zone: "Zone B", status: "scheduled" },
-  { id: 3, client: "Abena Owusu", driver: "Samuel Darko", date: "2026-06-20", day: "Saturday", time: "07:00 AM", zone: "Zone C", status: "pending" },
-  { id: 4, client: "Yaw Amponsah", driver: "Kweku Asante", date: "2026-06-16", day: "Monday", time: "10:00 AM", zone: "Zone A", status: "completed" },
-  { id: 5, client: "Esi Barimah", driver: "Emmanuel Boateng", date: "2026-06-17", day: "Tuesday", time: "11:00 AM", zone: "Zone D", status: "scheduled" },
-  { id: 6, client: "Nana Amoah", driver: "Samuel Darko", date: "2026-06-16", day: "Monday", time: "08:30 AM", zone: "Zone B", status: "cancelled" },
+  { id: 1, client: "Akosua Mensah", driver: "Kweku Asante", date: "2026-06-18", day: "Thursday", time: "08:00 AM", zone: "Zone A", locationAddress: "East Legon, Accra", latitude: "5.6517", longitude: "-0.1731", status: "scheduled" },
+  { id: 2, client: "Kofi Adu", driver: "Emmanuel Boateng", date: "2026-06-19", day: "Friday", time: "09:30 AM", zone: "Zone B", locationAddress: "Adabraka, Accra", latitude: "5.5631", longitude: "-0.2168", status: "scheduled" },
+  { id: 3, client: "Abena Owusu", driver: "Samuel Darko", date: "2026-06-20", day: "Saturday", time: "07:00 AM", zone: "Zone C", locationAddress: "Kokomlemle, Accra", latitude: "5.5766", longitude: "-0.2041", status: "pending" },
+  { id: 4, client: "Yaw Amponsah", driver: "Kweku Asante", date: "2026-06-16", day: "Monday", time: "10:00 AM", zone: "Zone A", locationAddress: "North Kaneshie, Accra", latitude: "5.5833", longitude: "-0.2520", status: "completed" },
+  { id: 5, client: "Esi Barimah", driver: "Emmanuel Boateng", date: "2026-06-17", day: "Tuesday", time: "11:00 AM", zone: "Zone D", locationAddress: "Spintex Road, Accra", latitude: "5.6037", longitude: "-0.1066", status: "scheduled" },
+  { id: 6, client: "Nana Amoah", driver: "Samuel Darko", date: "2026-06-16", day: "Monday", time: "08:30 AM", zone: "Zone B", locationAddress: "Dansoman, Accra", latitude: "5.5352", longitude: "-0.2726", status: "cancelled" },
 ];
 
 const USERS_DATA: User[] = [
@@ -250,6 +259,29 @@ const USERS_DATA: User[] = [
 ];
 
 const CLIENTS_LIST = ["Akosua Mensah", "Kofi Adu", "Abena Owusu", "Yaw Amponsah", "Esi Barimah", "Nana Amoah", "Paa Kwesi Ankrah"];
+
+const DEFAULT_CLIENT_LOCATION_DIRECTORY: Record<string, ClientLocation> = {
+  "Akosua Mensah": { address: "East Legon, Accra", latitude: "5.6517", longitude: "-0.1731" },
+  "Kofi Adu": { address: "Adabraka, Accra", latitude: "5.5631", longitude: "-0.2168" },
+  "Abena Owusu": { address: "Kokomlemle, Accra", latitude: "5.5766", longitude: "-0.2041" },
+  "Yaw Amponsah": { address: "North Kaneshie, Accra", latitude: "5.5833", longitude: "-0.2520" },
+  "Esi Barimah": { address: "Spintex Road, Accra", latitude: "5.6037", longitude: "-0.1066" },
+  "Nana Amoah": { address: "Dansoman, Accra", latitude: "5.5352", longitude: "-0.2726" },
+  "Paa Kwesi Ankrah": { address: "Madina, Accra", latitude: "5.6870", longitude: "-0.1630" },
+};
+
+const SCHEDULE_STORAGE_KEY = "wastegh_schedule_entries";
+const CLIENT_LOCATION_STORAGE_KEY = "wastegh_client_locations";
+
+const getGoogleMapsSearchUrl = (entry: Pick<ScheduleEntry, "locationAddress" | "latitude" | "longitude">) => {
+  const coordinateQuery = entry.latitude && entry.longitude ? `${entry.latitude},${entry.longitude}` : entry.locationAddress;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinateQuery)}`;
+};
+
+const getGoogleMapsDirectionsUrl = (entry: Pick<ScheduleEntry, "locationAddress" | "latitude" | "longitude">) => {
+  const destination = entry.latitude && entry.longitude ? `${entry.latitude},${entry.longitude}` : entry.locationAddress;
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
+};
 
 const TREND_DATA = [
   { month: "Jan", collections: 320, revenue: 28400 },
@@ -334,7 +366,15 @@ function StatCard({
 
 // ── Pages ─────────────────────────────────────────────────────────────────────
 
-function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: Page) => void }) {
+function DashboardPage({
+  role,
+  entries,
+  onNavigate,
+}: {
+  role: Role;
+  entries: ScheduleEntry[];
+  onNavigate?: (page: Page) => void;
+}) {
   const isMD = role === "managing_director";
   const isOM = role === "operation_manager";
   const isAM = role === "account_manager";
@@ -473,7 +513,7 @@ function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: P
           <button className="text-xs text-primary font-medium hover:underline">View all</button>
         </div>
         <div className="divide-y divide-border">
-          {SCHEDULE_DATA.slice(0, 5).map((entry) => (
+          {entries.slice(0, 5).map((entry) => (
             <div key={entry.id} className="flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-primary">
@@ -493,27 +533,62 @@ function DashboardPage({ role, onNavigate }: { role: Role; onNavigate?: (page: P
   );
 }
 
-function SchedulingPage() {
-  const [entries, setEntries] = useState<ScheduleEntry[]>(SCHEDULE_DATA);
+function SchedulingPage({
+  entries,
+  setEntries,
+  clientLocations,
+}: {
+  entries: ScheduleEntry[];
+  setEntries: React.Dispatch<React.SetStateAction<ScheduleEntry[]>>;
+  clientLocations: Record<string, ClientLocation>;
+}) {
   const [selectedClient, setSelectedClient] = useState("");
   const [selectedDriver, setSelectedDriver] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedDay, setSelectedDay] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedZone, setSelectedZone] = useState("");
+  const [selectedAddress, setSelectedAddress] = useState("");
+  const [selectedLatitude, setSelectedLatitude] = useState("");
+  const [selectedLongitude, setSelectedLongitude] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState("all");
 
   const drivers = ["Kweku Asante", "Emmanuel Boateng", "Samuel Darko"];
   const zones = ["Zone A", "Zone B", "Zone C", "Zone D"];
 
+  const handleClientChange = (client: string) => {
+    setSelectedClient(client);
+    const location = clientLocations[client];
+    if (location) {
+      setSelectedAddress(location.address);
+      setSelectedLatitude(location.latitude);
+      setSelectedLongitude(location.longitude);
+    } else {
+      setSelectedAddress("");
+      setSelectedLatitude("");
+      setSelectedLongitude("");
+    }
+  };
+
   const handleSubmit = () => {
-    if (!selectedClient || !selectedDate || !selectedDay) return;
+    if (!selectedClient || !selectedDate || !selectedDay || !selectedAddress) return;
     if (editId !== null) {
       setEntries((prev) =>
         prev.map((e) =>
           e.id === editId
-            ? { ...e, client: selectedClient, driver: selectedDriver, date: selectedDate, day: selectedDay, time: selectedTime, zone: selectedZone }
+            ? {
+                ...e,
+                client: selectedClient,
+                driver: selectedDriver,
+                date: selectedDate,
+                day: selectedDay,
+                time: selectedTime,
+                zone: selectedZone,
+                locationAddress: selectedAddress,
+                latitude: selectedLatitude,
+                longitude: selectedLongitude,
+              }
             : e
         )
       );
@@ -527,6 +602,9 @@ function SchedulingPage() {
         day: selectedDay,
         time: selectedTime,
         zone: selectedZone,
+        locationAddress: selectedAddress,
+        latitude: selectedLatitude,
+        longitude: selectedLongitude,
         status: "scheduled",
       };
       setEntries((prev) => [newEntry, ...prev]);
@@ -537,6 +615,9 @@ function SchedulingPage() {
     setSelectedDay("");
     setSelectedTime("");
     setSelectedZone("");
+    setSelectedAddress("");
+    setSelectedLatitude("");
+    setSelectedLongitude("");
   };
 
   const handleEdit = (entry: ScheduleEntry) => {
@@ -547,6 +628,9 @@ function SchedulingPage() {
     setSelectedDay(entry.day);
     setSelectedTime(entry.time);
     setSelectedZone(entry.zone);
+    setSelectedAddress(entry.locationAddress);
+    setSelectedLatitude(entry.latitude);
+    setSelectedLongitude(entry.longitude);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -560,7 +644,7 @@ function SchedulingPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground font-display">Scheduling</h1>
-        <p className="text-sm text-muted-foreground mt-1">Assign pickup dates and times to clients.</p>
+        <p className="text-sm text-muted-foreground mt-1">Assign pickups and capture client geolocation for Google Maps navigation.</p>
       </div>
 
       {/* Assignment Form */}
@@ -577,7 +661,7 @@ function SchedulingPage() {
             <label className="text-sm font-medium text-foreground">Client</label>
             <select
               value={selectedClient}
-              onChange={(e) => setSelectedClient(e.target.value)}
+              onChange={(e) => handleClientChange(e.target.value)}
               className="w-full h-10 px-3 rounded-lg border border-border bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">Select client…</option>
@@ -653,12 +737,45 @@ function SchedulingPage() {
               className="w-full h-10 px-3 rounded-lg border border-border bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
+
+          <div className="space-y-1.5 lg:col-span-2">
+            <label className="text-sm font-medium text-foreground">Client Address / Landmark</label>
+            <input
+              type="text"
+              value={selectedAddress}
+              onChange={(e) => setSelectedAddress(e.target.value)}
+              placeholder="e.g. East Legon, 5th Avenue near A&C Mall"
+              className="w-full h-10 px-3 rounded-lg border border-border bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">Latitude</label>
+            <input
+              type="text"
+              value={selectedLatitude}
+              onChange={(e) => setSelectedLatitude(e.target.value)}
+              placeholder="5.6517"
+              className="w-full h-10 px-3 rounded-lg border border-border bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">Longitude</label>
+            <input
+              type="text"
+              value={selectedLongitude}
+              onChange={(e) => setSelectedLongitude(e.target.value)}
+              placeholder="-0.1731"
+              className="w-full h-10 px-3 rounded-lg border border-border bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
         </div>
 
         <div className="flex items-center gap-3 px-5 pb-5">
           <button
             onClick={handleSubmit}
-            disabled={!selectedClient || !selectedDate || !selectedDay}
+            disabled={!selectedClient || !selectedDate || !selectedDay || !selectedAddress}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {editId !== null ? (
@@ -669,7 +786,7 @@ function SchedulingPage() {
           </button>
           {editId !== null && (
             <button
-              onClick={() => { setEditId(null); setSelectedClient(""); setSelectedDriver(""); setSelectedDate(""); setSelectedDay(""); setSelectedTime(""); setSelectedZone(""); }}
+              onClick={() => { setEditId(null); setSelectedClient(""); setSelectedDriver(""); setSelectedDate(""); setSelectedDay(""); setSelectedTime(""); setSelectedZone(""); setSelectedAddress(""); setSelectedLatitude(""); setSelectedLongitude(""); }}
               className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
             >
               <X size={15} /> Cancel Edit
@@ -706,6 +823,7 @@ function SchedulingPage() {
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground font-mono uppercase tracking-wide">Day</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground font-mono uppercase tracking-wide">Time</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground font-mono uppercase tracking-wide">Zone</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground font-mono uppercase tracking-wide">Location</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground font-mono uppercase tracking-wide">Status</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground font-mono uppercase tracking-wide">Actions</th>
               </tr>
@@ -719,6 +837,14 @@ function SchedulingPage() {
                   <td className="px-5 py-3 text-muted-foreground">{entry.day}</td>
                   <td className="px-5 py-3 font-mono text-xs text-muted-foreground">{entry.time}</td>
                   <td className="px-5 py-3 text-muted-foreground">{entry.zone}</td>
+                  <td className="px-5 py-3 text-muted-foreground">
+                    <div className="flex flex-col gap-1">
+                      <span>{entry.locationAddress}</span>
+                      <a href={getGoogleMapsSearchUrl(entry)} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
+                        Open in Google Maps
+                      </a>
+                    </div>
+                  </td>
                   <td className="px-5 py-3"><StatusBadge status={entry.status} /></td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
@@ -740,7 +866,7 @@ function SchedulingPage() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-muted-foreground text-sm">No schedule entries found.</td>
+                  <td colSpan={9} className="px-5 py-10 text-center text-muted-foreground text-sm">No schedule entries found.</td>
                 </tr>
               )}
             </tbody>
@@ -751,13 +877,13 @@ function SchedulingPage() {
   );
 }
 
-function SchedulingPreviewPage() {
-  const mySchedule = SCHEDULE_DATA.filter((e) => e.driver === "Kweku Asante");
+function SchedulingPreviewPage({ entries }: { entries: ScheduleEntry[] }) {
+  const mySchedule = entries.filter((e) => e.driver === "Kweku Asante");
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground font-display">My Schedule</h1>
-        <p className="text-sm text-muted-foreground mt-1">Your assigned pickup schedule for this week.</p>
+        <p className="text-sm text-muted-foreground mt-1">Your assigned pickup schedule with client geolocation and map directions.</p>
       </div>
   <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
         {mySchedule.map((entry) => (
@@ -773,6 +899,15 @@ function SchedulingPreviewPage() {
               <p className="text-xs text-muted-foreground font-mono">📅 {entry.day}, {entry.date}</p>
               <p className="text-xs text-muted-foreground font-mono">⏰ {entry.time}</p>
               <p className="text-xs text-muted-foreground font-mono">📍 {entry.zone}</p>
+              <p className="text-xs text-muted-foreground">{entry.locationAddress}</p>
+              <div className="flex items-center gap-3 pt-1">
+                <a href={getGoogleMapsSearchUrl(entry)} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
+                  View on Maps
+                </a>
+                <a href={getGoogleMapsDirectionsUrl(entry)} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
+                  Get Directions
+                </a>
+              </div>
             </div>
           </div>
         ))}
@@ -1262,13 +1397,118 @@ function PaymentReviewPage() {
   );
 }
 
-function SettingsPage({ role }: { role: Role }) {
+function SettingsPage({
+  role,
+  userName,
+  clientLocations,
+  onSaveClientLocation,
+}: {
+  role: Role;
+  userName: string;
+  clientLocations: Record<string, ClientLocation>;
+  onSaveClientLocation: (clientName: string, location: ClientLocation) => void;
+}) {
+  const existingClientLocation = clientLocations[userName] ?? { address: "", latitude: "", longitude: "" };
+  const [clientAddress, setClientAddress] = useState(existingClientLocation.address);
+  const [clientLatitude, setClientLatitude] = useState(existingClientLocation.latitude);
+  const [clientLongitude, setClientLongitude] = useState(existingClientLocation.longitude);
+  const [locationStatus, setLocationStatus] = useState("");
+
+  useEffect(() => {
+    const latestClientLocation = clientLocations[userName] ?? { address: "", latitude: "", longitude: "" };
+    setClientAddress(latestClientLocation.address);
+    setClientLatitude(latestClientLocation.latitude);
+    setClientLongitude(latestClientLocation.longitude);
+    setLocationStatus("");
+  }, [clientLocations, userName]);
+
+  const captureCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus("Geolocation is not supported on this browser/device.");
+      return;
+    }
+    setLocationStatus("Getting your location...");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setClientLatitude(position.coords.latitude.toFixed(6));
+        setClientLongitude(position.coords.longitude.toFixed(6));
+        setLocationStatus("Location coordinates captured successfully.");
+      },
+      (error) => {
+        setLocationStatus(`Unable to capture location: ${error.message}`);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
+
+  const saveClientLocation = () => {
+    if (!userName || !clientAddress || !clientLatitude || !clientLongitude) return;
+    onSaveClientLocation(userName, { address: clientAddress, latitude: clientLatitude, longitude: clientLongitude });
+    setLocationStatus("Client location saved and ready for Google Maps navigation.");
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold text-foreground font-display">Settings</h1>
         <p className="text-sm text-muted-foreground mt-1">Manage your account preferences.</p>
       </div>
+
+      {role === "client" && (
+        <div className="bg-card rounded-xl border border-border shadow-sm">
+          <div className="px-5 py-4 border-b border-border">
+            <h3 className="font-semibold text-foreground font-display">My Pickup Location</h3>
+            <p className="text-xs text-muted-foreground mt-1">Save your address and coordinates so drivers can route to your location with Google Maps.</p>
+          </div>
+          <div className="p-5 space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Address / Landmark</label>
+              <input
+                type="text"
+                value={clientAddress}
+                onChange={(e) => setClientAddress(e.target.value)}
+                placeholder="e.g. East Legon, near A&C Mall"
+                className="w-full h-10 px-3 rounded-lg border border-border bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Latitude</label>
+                <input
+                  type="text"
+                  value={clientLatitude}
+                  onChange={(e) => setClientLatitude(e.target.value)}
+                  placeholder="5.651700"
+                  className="w-full h-10 px-3 rounded-lg border border-border bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Longitude</label>
+                <input
+                  type="text"
+                  value={clientLongitude}
+                  onChange={(e) => setClientLongitude(e.target.value)}
+                  placeholder="-0.173100"
+                  className="w-full h-10 px-3 rounded-lg border border-border bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={captureCurrentLocation} className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                Use Current Location
+              </button>
+              <button
+                onClick={saveClientLocation}
+                disabled={!clientAddress || !clientLatitude || !clientLongitude}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Save size={14} /> Save Location
+              </button>
+            </div>
+            {locationStatus && <p className="text-xs text-muted-foreground">{locationStatus}</p>}
+          </div>
+        </div>
+      )}
 
       {[
         {
@@ -1339,11 +1579,69 @@ export default function App() {
   const [showRolePicker, setShowRolePicker] = useState(false);
   const [notifications] = useState(3);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>(() => {
+    try {
+      const raw = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+      if (!raw) return SCHEDULE_DATA;
+      const parsed = JSON.parse(raw) as Partial<ScheduleEntry>[];
+      if (!Array.isArray(parsed)) return SCHEDULE_DATA;
+      return parsed.map((entry) => {
+        const fallbackLocation = DEFAULT_CLIENT_LOCATION_DIRECTORY[entry.client ?? ""] ?? { address: "", latitude: "", longitude: "" };
+        return {
+          id: entry.id ?? Date.now(),
+          client: entry.client ?? "",
+          driver: entry.driver ?? "",
+          date: entry.date ?? "",
+          day: entry.day ?? "",
+          time: entry.time ?? "",
+          zone: entry.zone ?? "",
+          locationAddress: entry.locationAddress ?? fallbackLocation.address,
+          latitude: entry.latitude ?? fallbackLocation.latitude,
+          longitude: entry.longitude ?? fallbackLocation.longitude,
+          status: entry.status ?? "scheduled",
+        };
+      });
+    } catch {
+      return SCHEDULE_DATA;
+    }
+  });
+  const [clientLocations, setClientLocations] = useState<Record<string, ClientLocation>>(() => {
+    try {
+      const raw = localStorage.getItem(CLIENT_LOCATION_STORAGE_KEY);
+      if (!raw) return DEFAULT_CLIENT_LOCATION_DIRECTORY;
+      const parsed = JSON.parse(raw) as Record<string, ClientLocation>;
+      if (!parsed || typeof parsed !== "object") return DEFAULT_CLIENT_LOCATION_DIRECTORY;
+      return { ...DEFAULT_CLIENT_LOCATION_DIRECTORY, ...parsed };
+    } catch {
+      return DEFAULT_CLIENT_LOCATION_DIRECTORY;
+    }
+  });
 
   const auth = useAuth();
 
   // derive activeRole from auth user
   const activeRole = auth.user?.role ?? null;
+  const navItems = activeRole ? NAV_CONFIG[activeRole] : [];
+  const currentRole = ROLES.find((r) => r.id === activeRole!) ?? ROLES[0];
+
+  useEffect(() => {
+    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(scheduleEntries));
+  }, [scheduleEntries]);
+
+  useEffect(() => {
+    localStorage.setItem(CLIENT_LOCATION_STORAGE_KEY, JSON.stringify(clientLocations));
+  }, [clientLocations]);
+
+  const saveClientLocation = (clientName: string, location: ClientLocation) => {
+    setClientLocations((prev) => ({ ...prev, [clientName]: location }));
+    setScheduleEntries((prev) =>
+      prev.map((entry) =>
+        entry.client === clientName
+          ? { ...entry, locationAddress: location.address, latitude: location.latitude, longitude: location.longitude }
+          : entry
+      )
+    );
+  };
 
   // Login Screen (when not authenticated)
   if (!auth.user) {
@@ -1371,21 +1669,18 @@ export default function App() {
     );
   }
 
-  const navItems = activeRole ? NAV_CONFIG[activeRole] : [];
-  const currentRole = ROLES.find((r) => r.id === activeRole!) ?? ROLES[0];
-
   const renderPage = () => {
     switch (activePage) {
-  case "dashboard": return <DashboardPage role={activeRole!} onNavigate={(p) => setActivePage(p)} />;
-      case "scheduling": return <SchedulingPage />;
-      case "scheduling_preview": return <SchedulingPreviewPage />;
+  case "dashboard": return <DashboardPage role={activeRole!} entries={scheduleEntries} onNavigate={(p) => setActivePage(p)} />;
+      case "scheduling": return <SchedulingPage entries={scheduleEntries} setEntries={setScheduleEntries} clientLocations={clientLocations} />;
+      case "scheduling_preview": return <SchedulingPreviewPage entries={scheduleEntries} />;
       case "reports": return <ReportsPage role={activeRole!} />;
       case "user_management": return <UserManagementPage />;
       case "payment_activities": return <PaymentActivitiesPage />;
       case "make_payment": return <MakePaymentPage />;
       case "payment_review": return <PaymentReviewPage />;
-      case "settings": return <SettingsPage role={activeRole!} />;
-      default: return <DashboardPage role={activeRole!} />;
+      case "settings": return <SettingsPage role={activeRole!} userName={auth.user?.name ?? ""} clientLocations={clientLocations} onSaveClientLocation={saveClientLocation} />;
+      default: return <DashboardPage role={activeRole!} entries={scheduleEntries} />;
     }
   };
 
