@@ -55,6 +55,7 @@ type Role =
 type Page =
   | "dashboard"
   | "scheduling"
+  | "ops_metrics"
   | "scheduling_preview"
   | "reports"
   | "user_management"
@@ -234,6 +235,7 @@ const NAV_CONFIG: Record<Role, NavItem[]> = {
   operation_manager: [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
     { id: "scheduling", label: "Scheduling", icon: <Calendar size={18} /> },
+    { id: "ops_metrics", label: "Ops Metrics", icon: <TrendingUp size={18} /> },
     { id: "reports", label: "Reports", icon: <FileText size={18} /> },
     { id: "settings", label: "Settings", icon: <Settings size={18} /> },
   ],
@@ -283,14 +285,57 @@ const getGoogleMapsDirectionsUrl = (entry: Pick<ScheduleEntry, "locationAddress"
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
 };
 
+function MapsLink({
+  entry,
+  type,
+  label,
+}: {
+  entry: Pick<ScheduleEntry, "locationAddress" | "latitude" | "longitude">;
+  type: "search" | "directions";
+  label: string;
+}) {
+  const href = type === "search" ? getGoogleMapsSearchUrl(entry) : getGoogleMapsDirectionsUrl(entry);
+  const isUnavailable = !entry.locationAddress && !(entry.latitude && entry.longitude);
+
+  const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isUnavailable) {
+      event.preventDefault();
+      return;
+    }
+    event.preventDefault();
+    const opened = window.open(href, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      window.location.assign(href);
+    }
+  };
+
+  return (
+    <a
+      href={href}
+      onClick={handleClick}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`text-xs hover:underline ${isUnavailable ? "text-muted-foreground pointer-events-none no-underline" : "text-blue-600"}`}
+      aria-disabled={isUnavailable}
+    >
+      {label}
+    </a>
+  );
+}
+
+const FLAT_RATE_GHS = 70;
+
+const formatGhs = (amount: number, minimumFractionDigits = 2) =>
+  `GHS ${amount.toLocaleString(undefined, { minimumFractionDigits, maximumFractionDigits: 2 })}`;
+
 const TREND_DATA = [
-  { month: "Jan", collections: 320, revenue: 28400 },
-  { month: "Feb", collections: 288, revenue: 25100 },
-  { month: "Mar", collections: 412, revenue: 36800 },
-  { month: "Apr", collections: 380, revenue: 34200 },
-  { month: "May", collections: 455, revenue: 41600 },
-  { month: "Jun", collections: 398, revenue: 37900 },
-];
+  { month: "Jan", collections: 320 },
+  { month: "Feb", collections: 288 },
+  { month: "Mar", collections: 412 },
+  { month: "Apr", collections: 380 },
+  { month: "May", collections: 455 },
+  { month: "Jun", collections: 398 },
+].map((entry) => ({ ...entry, revenue: entry.collections * FLAT_RATE_GHS }));
 
 const ZONE_DATA = [
   { name: "Zone A", value: 34, color: "#15803d" },
@@ -300,11 +345,11 @@ const ZONE_DATA = [
 ];
 
 const PAYMENT_DATA = [
-  { id: "PAY-001", client: "Akosua Mensah", amount: "GHS 450.00", date: "2026-06-14", method: "Mobile Money", status: "completed" },
-  { id: "PAY-002", client: "Kofi Adu", amount: "GHS 320.00", date: "2026-06-13", method: "Bank Transfer", status: "completed" },
-  { id: "PAY-003", client: "Abena Owusu", amount: "GHS 275.00", date: "2026-06-12", method: "Mobile Money", status: "pending" },
-  { id: "PAY-004", client: "Yaw Amponsah", amount: "GHS 510.00", date: "2026-06-11", method: "Cash", status: "completed" },
-  { id: "PAY-005", client: "Esi Barimah", amount: "GHS 390.00", date: "2026-06-10", method: "Mobile Money", status: "failed" },
+  { id: "PAY-001", client: "Akosua Mensah", amount: FLAT_RATE_GHS, date: "2026-06-14", method: "Mobile Money", status: "completed" },
+  { id: "PAY-002", client: "Kofi Adu", amount: FLAT_RATE_GHS, date: "2026-06-13", method: "Bank Transfer", status: "completed" },
+  { id: "PAY-003", client: "Abena Owusu", amount: FLAT_RATE_GHS, date: "2026-06-12", method: "Mobile Money", status: "pending" },
+  { id: "PAY-004", client: "Yaw Amponsah", amount: FLAT_RATE_GHS, date: "2026-06-11", method: "Cash", status: "completed" },
+  { id: "PAY-005", client: "Esi Barimah", amount: FLAT_RATE_GHS, date: "2026-06-10", method: "Mobile Money", status: "failed" },
 ];
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -380,6 +425,7 @@ function DashboardPage({
   const isAM = role === "account_manager";
   const isDriver = role === "driver";
   const isClient = role === "client";
+  const monthlyRevenue = TREND_DATA[TREND_DATA.length - 1]?.revenue ?? 0;
 
  return (
     <div className="space-y-6">
@@ -399,7 +445,7 @@ function DashboardPage({
         {isOM && (
           <>
             <button onClick={() => onNavigate ? onNavigate("scheduling") : alert("Navigate: scheduling")} className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm">Open Scheduling</button>
-            <button onClick={() => alert("Reviewing operational metrics...")} className="px-3 py-2 rounded-lg border border-border text-sm">Ops Metrics</button>
+            <button onClick={() => onNavigate ? onNavigate("ops_metrics") : alert("Navigate: ops_metrics")} className="px-3 py-2 rounded-lg border border-border text-sm">Ops Metrics</button>
           </>
         )}
         {isAM && (
@@ -434,7 +480,7 @@ function DashboardPage({
         )}
         {isAM && (
           <>
-            <StatCard title="Total Revenue" value="GHS 184,200" sub="This month" trend="up" icon={<TrendingUp size={18} />} color="#15803d" />
+            <StatCard title="Total Revenue" value={formatGhs(monthlyRevenue)} sub="This month @ GHS 70 flat rate" trend="up" icon={<TrendingUp size={18} />} color="#15803d" />
             <StatCard title="Payments Received" value="312" sub="Transactions" icon={<CreditCard size={18} />} color="#1d4ed8" />
             <StatCard title="Pending Payments" value="28" sub="Awaiting clearance" trend="down" icon={<Clock size={18} />} color="#b45309" />
             <StatCard title="Active Clients" value="540" sub="+18 this month" trend="up" icon={<Users size={18} />} color="#0e7490" />
@@ -451,7 +497,7 @@ function DashboardPage({
         {isClient && (
           <>
             <StatCard title="Next Pickup" value="Thu 18 Jun" sub="08:00 AM" icon={<Calendar size={18} />} color="#15803d" />
-            <StatCard title="Outstanding Balance" value="GHS 450.00" sub="Due 20 Jun" icon={<CreditCard size={18} />} color="#b45309" />
+            <StatCard title="Outstanding Balance" value={formatGhs(FLAT_RATE_GHS)} sub="Flat service rate" icon={<CreditCard size={18} />} color="#b45309" />
             <StatCard title="Pickups This Month" value="6" sub="All completed" icon={<CheckCircle size={18} />} color="#1d4ed8" />
             <StatCard title="Account Status" value="Active" sub="Premium plan" icon={<AlertCircle size={18} />} color="#0e7490" />
           </>
@@ -840,9 +886,7 @@ function SchedulingPage({
                   <td className="px-5 py-3 text-muted-foreground">
                     <div className="flex flex-col gap-1">
                       <span>{entry.locationAddress}</span>
-                      <a href={getGoogleMapsSearchUrl(entry)} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
-                        Open in Google Maps
-                      </a>
+                      <MapsLink entry={entry} type="search" label="Open in Google Maps" />
                     </div>
                   </td>
                   <td className="px-5 py-3"><StatusBadge status={entry.status} /></td>
@@ -901,12 +945,8 @@ function SchedulingPreviewPage({ entries }: { entries: ScheduleEntry[] }) {
               <p className="text-xs text-muted-foreground font-mono">📍 {entry.zone}</p>
               <p className="text-xs text-muted-foreground">{entry.locationAddress}</p>
               <div className="flex items-center gap-3 pt-1">
-                <a href={getGoogleMapsSearchUrl(entry)} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
-                  View on Maps
-                </a>
-                <a href={getGoogleMapsDirectionsUrl(entry)} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
-                  Get Directions
-                </a>
+                <MapsLink entry={entry} type="search" label="View on Maps" />
+                <MapsLink entry={entry} type="directions" label="Get Directions" />
               </div>
             </div>
           </div>
@@ -921,8 +961,120 @@ function SchedulingPreviewPage({ entries }: { entries: ScheduleEntry[] }) {
   );
 }
 
+function OpsMetricsPage({ entries }: { entries: ScheduleEntry[] }) {
+  const totalAssignments = entries.length;
+  const completed = entries.filter((entry) => entry.status === "completed").length;
+  const pending = entries.filter((entry) => entry.status === "pending").length;
+  const scheduled = entries.filter((entry) => entry.status === "scheduled").length;
+  const cancelled = entries.filter((entry) => entry.status === "cancelled").length;
+  const completionRate = totalAssignments ? Math.round((completed / totalAssignments) * 100) : 0;
+  const activeDrivers = new Set(entries.filter((entry) => entry.driver).map((entry) => entry.driver)).size;
+  const zoneCoverage = new Set(entries.filter((entry) => entry.zone).map((entry) => entry.zone)).size;
+
+  const statusChartData = [
+    { name: "Completed", value: completed, color: "#16a34a" },
+    { name: "Scheduled", value: scheduled, color: "#2563eb" },
+    { name: "Pending", value: pending, color: "#d97706" },
+    { name: "Cancelled", value: cancelled, color: "#dc2626" },
+  ].filter((item) => item.value > 0);
+
+  const zoneLoadData = Object.entries(
+    entries.reduce<Record<string, number>>((acc, entry) => {
+      acc[entry.zone] = (acc[entry.zone] ?? 0) + 1;
+      return acc;
+    }, {})
+  ).map(([zone, count]) => ({ zone, count }));
+
+  const driverPerformance = Object.entries(
+    entries.reduce<Record<string, { total: number; completed: number }>>((acc, entry) => {
+      if (!acc[entry.driver]) acc[entry.driver] = { total: 0, completed: 0 };
+      acc[entry.driver].total += 1;
+      if (entry.status === "completed") acc[entry.driver].completed += 1;
+      return acc;
+    }, {})
+  )
+    .map(([driver, stats]) => ({ driver, ...stats }))
+    .sort((a, b) => b.total - a.total);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground font-display">Ops Metrics</h1>
+        <p className="text-sm text-muted-foreground mt-1">Real-time operational performance from current scheduling activity.</p>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Total Assignments" value={totalAssignments.toString()} sub="All scheduled jobs" icon={<Package size={18} />} color="#15803d" />
+        <StatCard title="Completion Rate" value={`${completionRate}%`} sub={`${completed} completed jobs`} trend="up" icon={<CheckCircle size={18} />} color="#1d4ed8" />
+        <StatCard title="Active Drivers" value={activeDrivers.toString()} sub="With assigned jobs" icon={<Truck size={18} />} color="#0e7490" />
+        <StatCard title="Zone Coverage" value={zoneCoverage.toString()} sub="Zones with activity" icon={<Calendar size={18} />} color="#b45309" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-sm p-5">
+          <h3 className="font-semibold text-foreground font-display mb-4">Driver Workload</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={driverPerformance}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+              <XAxis dataKey="driver" tick={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} />
+              <YAxis tick={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)" }} />
+              <Bar dataKey="total" fill="#1d4ed8" radius={[4, 4, 0, 0]} name="Total Assignments" />
+              <Bar dataKey="completed" fill="#16a34a" radius={[4, 4, 0, 0]} name="Completed" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
+          <h3 className="font-semibold text-foreground font-display mb-4">Status Mix</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie data={statusChartData} cx="50%" cy="50%" innerRadius={42} outerRadius={74} dataKey="value" paddingAngle={3}>
+                {statusChartData.map((entry) => (
+                  <Cell key={entry.name} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="space-y-1 mt-1">
+            {statusChartData.map((entry) => (
+              <div key={entry.name} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                  <span className="text-xs text-muted-foreground">{entry.name}</span>
+                </div>
+                <span className="text-xs font-mono text-foreground">{entry.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
+          <h3 className="font-semibold text-foreground font-display">Zone Load</h3>
+        </div>
+        <div className="divide-y divide-border">
+          {zoneLoadData.map((row) => (
+            <div key={row.zone} className="flex items-center justify-between px-5 py-3">
+              <span className="text-sm text-foreground">{row.zone}</span>
+              <span className="text-sm font-mono font-semibold text-foreground">{row.count} assignments</span>
+            </div>
+          ))}
+          {zoneLoadData.length === 0 && (
+            <div className="px-5 py-6 text-sm text-muted-foreground">No zone activity found.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ReportsPage({ role }: { role: Role }) {
   const reportsRef = useRef<HTMLDivElement | null>(null);
+  const totalPickupsCompleted = TREND_DATA.reduce((sum, month) => sum + month.collections, 0);
+  const totalRevenueCollected = TREND_DATA.reduce((sum, month) => sum + month.revenue, 0);
 
   const exportToPdf = () => {
     try {
@@ -1020,8 +1172,8 @@ function ReportsPage({ role }: { role: Role }) {
         </div>
         <div className="divide-y divide-border">
           {[
-            { label: "Total Pickups Completed", value: "1,842", note: "+12% vs last month" },
-            { label: "Total Revenue Collected", value: "GHS 184,200", note: "+8.2% vs last month" },
+            { label: "Total Pickups Completed", value: totalPickupsCompleted.toLocaleString(), note: "+12% vs last month" },
+            { label: "Total Revenue Collected", value: formatGhs(totalRevenueCollected), note: "Computed at GHS 70 flat rate" },
             { label: "Client Satisfaction Score", value: "94.3%", note: "Based on 312 reviews" },
             { label: "Average Pickups per Driver", value: "76.75", note: "Across 24 active drivers" },
             { label: "Zones with 100% Coverage", value: "8 of 12", note: "4 zones partially covered" },
@@ -1212,6 +1364,11 @@ function UserManagementPage() {
 }
 
 function PaymentActivitiesPage() {
+  const completedPayments = PAYMENT_DATA.filter((p) => p.status === "completed");
+  const pendingPayments = PAYMENT_DATA.filter((p) => p.status === "pending");
+  const failedPayments = PAYMENT_DATA.filter((p) => p.status === "failed");
+  const totalCollected = completedPayments.reduce((sum, payment) => sum + payment.amount, 0);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -1225,10 +1382,10 @@ function PaymentActivitiesPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Collected" value="GHS 184,200" sub="This month" trend="up" icon={<TrendingUp size={18} />} color="#15803d" />
-        <StatCard title="Completed" value="298" sub="Transactions" icon={<CheckCircle size={18} />} color="#1d4ed8" />
-        <StatCard title="Pending" value="28" sub="Awaiting clearance" icon={<Clock size={18} />} color="#b45309" />
-        <StatCard title="Failed" value="4" sub="Needs follow-up" icon={<AlertCircle size={18} />} color="#dc2626" />
+        <StatCard title="Total Collected" value={formatGhs(totalCollected)} sub={`Flat rate: ${formatGhs(FLAT_RATE_GHS)}`} trend="up" icon={<TrendingUp size={18} />} color="#15803d" />
+        <StatCard title="Completed" value={completedPayments.length.toString()} sub="Transactions" icon={<CheckCircle size={18} />} color="#1d4ed8" />
+        <StatCard title="Pending" value={pendingPayments.length.toString()} sub="Awaiting clearance" icon={<Clock size={18} />} color="#b45309" />
+        <StatCard title="Failed" value={failedPayments.length.toString()} sub="Needs follow-up" icon={<AlertCircle size={18} />} color="#dc2626" />
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
@@ -1252,7 +1409,7 @@ function PaymentActivitiesPage() {
                 <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-5 py-3 font-mono text-xs text-muted-foreground">{p.id}</td>
                   <td className="px-5 py-3 font-medium text-foreground">{p.client}</td>
-                  <td className="px-5 py-3 font-mono font-semibold text-foreground">{p.amount}</td>
+                  <td className="px-5 py-3 font-mono font-semibold text-foreground">{formatGhs(p.amount)}</td>
                   <td className="px-5 py-3 font-mono text-xs text-muted-foreground">{p.date}</td>
                   <td className="px-5 py-3 text-muted-foreground">{p.method}</td>
                   <td className="px-5 py-3"><StatusBadge status={p.status} /></td>
@@ -1269,7 +1426,7 @@ function PaymentActivitiesPage() {
 function MakePaymentPage() {
   const [step, setStep] = useState(1);
   const [method, setMethod] = useState("");
-  const [amount, setAmount] = useState("450.00");
+  const amount = FLAT_RATE_GHS.toFixed(2);
 
   return (
     <div className="space-y-6 max-w-xl">
@@ -1281,7 +1438,7 @@ function MakePaymentPage() {
       {/* Balance Card */}
       <div className="bg-primary rounded-2xl p-6 text-primary-foreground">
         <p className="text-sm opacity-80">Outstanding Balance</p>
-        <p className="text-4xl font-bold font-display mt-1">GHS 450.00</p>
+        <p className="text-4xl font-bold font-display mt-1">{formatGhs(FLAT_RATE_GHS)}</p>
         <p className="text-xs opacity-70 font-mono mt-2">Due by 20 June 2026 · Account: CL-00412</p>
       </div>
 
@@ -1316,7 +1473,8 @@ function MakePaymentPage() {
             <h3 className="font-semibold text-foreground font-display">Payment Details</h3>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Amount (GHS)</label>
-              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full h-10 px-3 rounded-lg border border-border bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input type="number" value={amount} readOnly className="w-full h-10 px-3 rounded-lg border border-border bg-muted text-sm text-foreground focus:outline-none" />
+              <p className="text-xs text-muted-foreground">Flat service rate is fixed at {formatGhs(FLAT_RATE_GHS)}.</p>
             </div>
             {method === "Mobile Money (MTN)" && (
               <div className="space-y-1.5">
@@ -1360,6 +1518,14 @@ function MakePaymentPage() {
 }
 
 function PaymentReviewPage() {
+  const monthlyCompletedRuns = 24;
+  const pendingRuns = 6;
+  const paymentHistory = [
+    { period: "May 2026", runs: 22, status: "paid" },
+    { period: "April 2026", runs: 20, status: "paid" },
+    { period: "March 2026", runs: 26, status: "paid" },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -1367,26 +1533,22 @@ function PaymentReviewPage() {
         <p className="text-sm text-muted-foreground mt-1">Your earnings summary and payment history.</p>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <StatCard title="This Month's Earnings" value="GHS 3,240" sub="24 completed runs" trend="up" icon={<TrendingUp size={18} />} color="#15803d" />
-        <StatCard title="Pending Payment" value="GHS 480" sub="Awaiting dispatch" icon={<Clock size={18} />} color="#b45309" />
+        <StatCard title="This Month's Earnings" value={formatGhs(monthlyCompletedRuns * FLAT_RATE_GHS)} sub={`${monthlyCompletedRuns} completed runs @ ${formatGhs(FLAT_RATE_GHS)}`} trend="up" icon={<TrendingUp size={18} />} color="#15803d" />
+        <StatCard title="Pending Payment" value={formatGhs(pendingRuns * FLAT_RATE_GHS)} sub={`${pendingRuns} runs awaiting dispatch`} icon={<Clock size={18} />} color="#b45309" />
       </div>
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-border">
           <h3 className="font-semibold text-foreground font-display">Payment History</h3>
         </div>
         <div className="divide-y divide-border">
-          {[
-            { period: "May 2026", amount: "GHS 3,120", runs: 22, status: "paid" },
-            { period: "April 2026", amount: "GHS 2,880", runs: 20, status: "paid" },
-            { period: "March 2026", amount: "GHS 3,360", runs: 26, status: "paid" },
-          ].map((row) => (
+          {paymentHistory.map((row) => (
             <div key={row.period} className="flex items-center justify-between px-5 py-4">
               <div>
                 <p className="text-sm font-medium text-foreground">{row.period}</p>
                 <p className="text-xs text-muted-foreground font-mono">{row.runs} completed pickups</p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-mono font-semibold text-foreground">{row.amount}</span>
+                <span className="font-mono font-semibold text-foreground">{formatGhs(row.runs * FLAT_RATE_GHS)}</span>
                 <StatusBadge status={row.status} />
               </div>
             </div>
@@ -1673,7 +1835,8 @@ export default function App() {
     switch (activePage) {
   case "dashboard": return <DashboardPage role={activeRole!} entries={scheduleEntries} onNavigate={(p) => setActivePage(p)} />;
       case "scheduling": return <SchedulingPage entries={scheduleEntries} setEntries={setScheduleEntries} clientLocations={clientLocations} />;
-      case "scheduling_preview": return <SchedulingPreviewPage entries={scheduleEntries} />;
+  case "ops_metrics": return <OpsMetricsPage entries={scheduleEntries} />;
+  case "scheduling_preview": return <SchedulingPreviewPage entries={scheduleEntries} />;
       case "reports": return <ReportsPage role={activeRole!} />;
       case "user_management": return <UserManagementPage />;
       case "payment_activities": return <PaymentActivitiesPage />;
