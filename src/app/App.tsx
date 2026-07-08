@@ -55,6 +55,7 @@ type Role =
 type Page =
   | "dashboard"
   | "scheduling"
+  | "ops_metrics"
   | "scheduling_preview"
   | "reports"
   | "user_management"
@@ -234,6 +235,7 @@ const NAV_CONFIG: Record<Role, NavItem[]> = {
   operation_manager: [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
     { id: "scheduling", label: "Scheduling", icon: <Calendar size={18} /> },
+    { id: "ops_metrics", label: "Ops Metrics", icon: <TrendingUp size={18} /> },
     { id: "reports", label: "Reports", icon: <FileText size={18} /> },
     { id: "settings", label: "Settings", icon: <Settings size={18} /> },
   ],
@@ -443,7 +445,7 @@ function DashboardPage({
         {isOM && (
           <>
             <button onClick={() => onNavigate ? onNavigate("scheduling") : alert("Navigate: scheduling")} className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm">Open Scheduling</button>
-            <button onClick={() => alert("Reviewing operational metrics...")} className="px-3 py-2 rounded-lg border border-border text-sm">Ops Metrics</button>
+            <button onClick={() => onNavigate ? onNavigate("ops_metrics") : alert("Navigate: ops_metrics")} className="px-3 py-2 rounded-lg border border-border text-sm">Ops Metrics</button>
           </>
         )}
         {isAM && (
@@ -954,6 +956,116 @@ function SchedulingPreviewPage({ entries }: { entries: ScheduleEntry[] }) {
             No pickups assigned to you yet.
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function OpsMetricsPage({ entries }: { entries: ScheduleEntry[] }) {
+  const totalAssignments = entries.length;
+  const completed = entries.filter((entry) => entry.status === "completed").length;
+  const pending = entries.filter((entry) => entry.status === "pending").length;
+  const scheduled = entries.filter((entry) => entry.status === "scheduled").length;
+  const cancelled = entries.filter((entry) => entry.status === "cancelled").length;
+  const completionRate = totalAssignments ? Math.round((completed / totalAssignments) * 100) : 0;
+  const activeDrivers = new Set(entries.filter((entry) => entry.driver).map((entry) => entry.driver)).size;
+  const zoneCoverage = new Set(entries.filter((entry) => entry.zone).map((entry) => entry.zone)).size;
+
+  const statusChartData = [
+    { name: "Completed", value: completed, color: "#16a34a" },
+    { name: "Scheduled", value: scheduled, color: "#2563eb" },
+    { name: "Pending", value: pending, color: "#d97706" },
+    { name: "Cancelled", value: cancelled, color: "#dc2626" },
+  ].filter((item) => item.value > 0);
+
+  const zoneLoadData = Object.entries(
+    entries.reduce<Record<string, number>>((acc, entry) => {
+      acc[entry.zone] = (acc[entry.zone] ?? 0) + 1;
+      return acc;
+    }, {})
+  ).map(([zone, count]) => ({ zone, count }));
+
+  const driverPerformance = Object.entries(
+    entries.reduce<Record<string, { total: number; completed: number }>>((acc, entry) => {
+      if (!acc[entry.driver]) acc[entry.driver] = { total: 0, completed: 0 };
+      acc[entry.driver].total += 1;
+      if (entry.status === "completed") acc[entry.driver].completed += 1;
+      return acc;
+    }, {})
+  )
+    .map(([driver, stats]) => ({ driver, ...stats }))
+    .sort((a, b) => b.total - a.total);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground font-display">Ops Metrics</h1>
+        <p className="text-sm text-muted-foreground mt-1">Real-time operational performance from current scheduling activity.</p>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Total Assignments" value={totalAssignments.toString()} sub="All scheduled jobs" icon={<Package size={18} />} color="#15803d" />
+        <StatCard title="Completion Rate" value={`${completionRate}%`} sub={`${completed} completed jobs`} trend="up" icon={<CheckCircle size={18} />} color="#1d4ed8" />
+        <StatCard title="Active Drivers" value={activeDrivers.toString()} sub="With assigned jobs" icon={<Truck size={18} />} color="#0e7490" />
+        <StatCard title="Zone Coverage" value={zoneCoverage.toString()} sub="Zones with activity" icon={<Calendar size={18} />} color="#b45309" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-sm p-5">
+          <h3 className="font-semibold text-foreground font-display mb-4">Driver Workload</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={driverPerformance}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+              <XAxis dataKey="driver" tick={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} />
+              <YAxis tick={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)" }} />
+              <Bar dataKey="total" fill="#1d4ed8" radius={[4, 4, 0, 0]} name="Total Assignments" />
+              <Bar dataKey="completed" fill="#16a34a" radius={[4, 4, 0, 0]} name="Completed" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
+          <h3 className="font-semibold text-foreground font-display mb-4">Status Mix</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie data={statusChartData} cx="50%" cy="50%" innerRadius={42} outerRadius={74} dataKey="value" paddingAngle={3}>
+                {statusChartData.map((entry) => (
+                  <Cell key={entry.name} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="space-y-1 mt-1">
+            {statusChartData.map((entry) => (
+              <div key={entry.name} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                  <span className="text-xs text-muted-foreground">{entry.name}</span>
+                </div>
+                <span className="text-xs font-mono text-foreground">{entry.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
+          <h3 className="font-semibold text-foreground font-display">Zone Load</h3>
+        </div>
+        <div className="divide-y divide-border">
+          {zoneLoadData.map((row) => (
+            <div key={row.zone} className="flex items-center justify-between px-5 py-3">
+              <span className="text-sm text-foreground">{row.zone}</span>
+              <span className="text-sm font-mono font-semibold text-foreground">{row.count} assignments</span>
+            </div>
+          ))}
+          {zoneLoadData.length === 0 && (
+            <div className="px-5 py-6 text-sm text-muted-foreground">No zone activity found.</div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1723,7 +1835,8 @@ export default function App() {
     switch (activePage) {
   case "dashboard": return <DashboardPage role={activeRole!} entries={scheduleEntries} onNavigate={(p) => setActivePage(p)} />;
       case "scheduling": return <SchedulingPage entries={scheduleEntries} setEntries={setScheduleEntries} clientLocations={clientLocations} />;
-      case "scheduling_preview": return <SchedulingPreviewPage entries={scheduleEntries} />;
+  case "ops_metrics": return <OpsMetricsPage entries={scheduleEntries} />;
+  case "scheduling_preview": return <SchedulingPreviewPage entries={scheduleEntries} />;
       case "reports": return <ReportsPage role={activeRole!} />;
       case "user_management": return <UserManagementPage />;
       case "payment_activities": return <PaymentActivitiesPage />;
